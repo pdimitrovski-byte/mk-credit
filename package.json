@@ -1,0 +1,6 @@
+{
+  "name": "mk-credit-backend",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": { "nodemailer": "^6" }
+}
