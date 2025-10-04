@@ -52,52 +52,81 @@
     <div id="err" class="err" style="display:none">⚠️ Грешка при испраќање.</div>
   </form>
   <script>
-async function sendLead(e){
-  e.preventDefault();
-  ok.style.display = err.style.display = "none";
-  err.textContent = "⚠️ Грешка при испраќање.";
+  // Каде праќа фронтот
+  const ENDPOINT = "/api/leads";
 
-  try {
-    const selectedPartner = f.partner.value;
-    const partnerEmail = PARTNER_EMAILS[selectedPartner] || DEFAULT_PARTNER_EMAIL;
-    const consentChecked = document.getElementById("consent")?.checked ?? true;
+  // Мапа: „Име на партнер → email“ (placeholder-и)
+  const PARTNER_EMAILS = {
+    "Тест 1 – финансиско друштво":  "test1@partners.example",
+    "Тест 2 – финансиско друштво":  "test2@partners.example",
+    "Тест 3 – финансиско друштво":  "test3@partners.example",
+    "Тест 4 – финансиско друштво":  "test4@partners.example",
+    "Тест 5 – финансиско друштво":  "test5@partners.example",
+    "Тест 6 – финансиско друштво":  "test6@partners.example",
+    "Тест 7 – финансиско друштво":  "test7@partners.example",
+    "Тест 8 – финансиско друштво":  "test8@partners.example",
+    "Тест 9 – финансиско друштво":  "test9@partners.example",
+    "Тест 10 – финансиско друштво": "test10@partners.example"
+  };
+  const DEFAULT_PARTNER_EMAIL = "ideamkkredit@yahoo.com";
 
-    const payload = {
-      full_name: f.first_name.value.trim() + " " + f.last_name.value.trim(),
-      first_name: f.first_name.value.trim(),
-      last_name: f.last_name.value.trim(),
-      phone_e164: toE164MK(f.phone.value.trim()),
-      requested_amount_mkd: Number(f.amount.value),
-      target_installment_mkd: Number(f.installment.value),
-      partner: selectedPartner,
-      partner_id: selectedPartner.split(" ")[1] || "test",
-      partner_email: partnerEmail,
-      consent: consentChecked,
-      consent_timestamp: new Date().toISOString(),
-      source: "landing-min"
-    };
-
-    const res = await fetch(ENDPOINT, {
-      method:"POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-      const txt = await res.text().catch(()=> "");
-      console.error("API error:", res.status, txt);
-      err.textContent = `⚠️ API ${res.status}: ${txt || 'непозната грешка'}`;
-      err.style.display = "block";
-      return;
-    }
-
-    ok.style.display = "block";
-  } catch (e2) {
-    console.error("JS error:", e2);
-    err.textContent = "⚠️ JS грешка: " + (e2?.message || e2);
-    err.style.display = "block";
+  function toE164MK(raw){
+    const d = String(raw).replace(/\D+/g,'');
+    if(!d) return "";
+    if(d.startsWith("389")) return "+"+d;
+    if(d.startsWith("0")) return "+389"+d.slice(1);
+    if(d.startsWith("7")) return "+389"+d;
+    return "+"+d;
   }
-}
+
+  async function sendLead(e){
+    e.preventDefault();
+    ok.style.display = err.style.display = "none";
+    err.textContent = "⚠️ Грешка при испраќање.";
+
+    try {
+      const selectedPartner = f.partner.value;
+      const partnerEmail = (PARTNER_EMAILS[selectedPartner] || DEFAULT_PARTNER_EMAIL);
+
+      const payload = {
+        full_name: f.first_name.value.trim() + " " + f.last_name.value.trim(),
+        first_name: f.first_name.value.trim(),
+        last_name: f.last_name.value.trim(),
+        phone_e164: toE164MK(f.phone.value.trim()),
+        requested_amount_mkd: Number(f.amount.value),
+        target_installment_mkd: Number(f.installment.value),
+        partner: selectedPartner,
+        partner_id: selectedPartner.split(" ")[1] || "test",
+        partner_email: partnerEmail,
+        consent: document.getElementById("consent")?.checked ?? true,
+        consent_timestamp: new Date().toISOString(),
+        source: "landing-min"
+      };
+
+      const res = await fetch(ENDPOINT, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(()=> "");
+        console.error("API error:", res.status, txt);
+        err.textContent = `⚠️ API ${res.status}: ${txt || 'непозната грешка'}`;
+        err.style.display = "block";
+        return;
+      }
+      ok.style.display = "block";
+    } catch (e2) {
+      console.error("JS error:", e2);
+      err.textContent = "⚠️ JS грешка: " + (e2?.message || e2);
+      err.style.display = "block";
+    }
+  }
+
+  const f = document.getElementById("f");
+  const ok = document.getElementById("ok");
+  const err = document.getElementById("err");
 </script>
 </body>
 </html>
