@@ -82,11 +82,12 @@
   }
 
   async function sendLead(e){
-    e.preventDefault();
-    ok.style.display = err.style.display = "none";
-
+  e.preventDefault();
+  ok.style.display = err.style.display = "none";
+  try {
     const selectedPartner = f.partner.value;
     const partnerEmail = PARTNER_EMAILS[selectedPartner] || DEFAULT_PARTNER_EMAIL;
+    const consentChecked = document.getElementById("consent")?.checked ?? true;
 
     const payload = {
       full_name: f.first_name.value.trim() + " " + f.last_name.value.trim(),
@@ -97,25 +98,24 @@
       target_installment_mkd: Number(f.installment.value),
       partner: selectedPartner,
       partner_id: selectedPartner.split(" ")[1] || "test",
-      partner_email: partnerEmail,            // ← тука оди мапираниот мејл
-      consent: f.consent.checked,
+      partner_email: partnerEmail,
+      consent: consentChecked,
       consent_timestamp: new Date().toISOString(),
       source: "landing-min"
     };
 
-    try{
-      const res = await fetch(ENDPOINT, {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(payload)
-      });
-      if(!res.ok) throw new Error("not ok");
-      ok.style.display = "block";
-    }catch(e){
-      console.error(e);
-      err.style.display = "block";
-    }
+    const res = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    ok.style.display = "block";
+  } catch (e2) {
+    console.error(e2);
+    err.style.display = "block";
   }
+}
 
   const f = document.getElementById("f");
   const ok = document.getElementById("ok");
