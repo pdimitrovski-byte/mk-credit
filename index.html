@@ -53,55 +53,74 @@
   </form>
 
   <script>
-    // ВАЖНО: ова е линијата за која праша
-    const ENDPOINT = "/api/leads";
+  const ENDPOINT = "/api/leads";
 
-    const PARTNER_EMAIL = "ideamkkredit@yahoo.com"; // за тест сите партнери одат тука
+  // Мапа: „Име на партнер → email“ (placeholder адреси)
+  const PARTNER_EMAILS = {
+    "Тест 1 – финансиско друштво":  "test1@partners.example",
+    "Тест 2 – финансиско друштво":  "test2@partners.example",
+    "Тест 3 – финансиско друштво":  "test3@partners.example",
+    "Тест 4 – финансиско друштво":  "test4@partners.example",
+    "Тест 5 – финансиско друштво":  "test5@partners.example",
+    "Тест 6 – финансиско друштво":  "test6@partners.example",
+    "Тест 7 – финансиско друштво":  "test7@partners.example",
+    "Тест 8 – финансиско друштво":  "test8@partners.example",
+    "Тест 9 – финансиско друштво":  "test9@partners.example",
+    "Тест 10 – финансиско друштво": "test10@partners.example"
+  };
 
-    function toE164MK(raw){
-      const d = String(raw).replace(/\D+/g,'');
-      if(!d) return "";
-      if(d.startsWith("389")) return "+"+d;
-      if(d.startsWith("0")) return "+389"+d.slice(1);
-      if(d.startsWith("7")) return "+389"+d;
-      return "+"+d;
+  // default fallback — ако не се пронајде партнер или е празно
+  const DEFAULT_PARTNER_EMAIL = "ideamkkredit@yahoo.com";
+
+  function toE164MK(raw){
+    const d = String(raw).replace(/\D+/g,'');
+    if(!d) return "";
+    if(d.startsWith("389")) return "+"+d;
+    if(d.startsWith("0")) return "+389"+d.slice(1);
+    if(d.startsWith("7")) return "+389"+d;
+    return "+"+d;
+  }
+
+  async function sendLead(e){
+    e.preventDefault();
+    ok.style.display = err.style.display = "none";
+
+    const selectedPartner = f.partner.value;
+    const partnerEmail = PARTNER_EMAILS[selectedPartner] || DEFAULT_PARTNER_EMAIL;
+
+    const payload = {
+      full_name: f.first_name.value.trim() + " " + f.last_name.value.trim(),
+      first_name: f.first_name.value.trim(),
+      last_name: f.last_name.value.trim(),
+      phone_e164: toE164MK(f.phone.value.trim()),
+      requested_amount_mkd: Number(f.amount.value),
+      target_installment_mkd: Number(f.installment.value),
+      partner: selectedPartner,
+      partner_id: selectedPartner.split(" ")[1] || "test",
+      partner_email: partnerEmail,            // ← тука оди мапираниот мејл
+      consent: f.consent.checked,
+      consent_timestamp: new Date().toISOString(),
+      source: "landing-min"
+    };
+
+    try{
+      const res = await fetch(ENDPOINT, {
+        method:"POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      if(!res.ok) throw new Error("not ok");
+      ok.style.display = "block";
+    }catch(e){
+      console.error(e);
+      err.style.display = "block";
     }
+  }
 
-    async function sendLead(e){
-      e.preventDefault();
-      ok.style.display = err.style.display = "none";
+  const f = document.getElementById("f");
+  const ok = document.getElementById("ok");
+  const err = document.getElementById("err");
+</script>
 
-      const payload = {
-        full_name: f.first_name.value.trim() + " " + f.last_name.value.trim(),
-        first_name: f.first_name.value.trim(),
-        last_name: f.last_name.value.trim(),
-        phone_e164: toE164MK(f.phone.value.trim()),
-        requested_amount_mkd: Number(f.amount.value),
-        target_installment_mkd: Number(f.installment.value),
-        partner: f.partner.value,
-        partner_id: f.partner.value.split(" ")[1] || "test",
-        partner_email: PARTNER_EMAIL,
-        consent: true,
-        consent_timestamp: new Date().toISOString(),
-        source: "landing-min"
-      };
-
-      try{
-        const res = await fetch(ENDPOINT, {
-          method:"POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify(payload)
-        });
-        if(!res.ok) throw new Error("not ok");
-        ok.style.display = "block";
-      }catch(e){
-        console.error(e);
-        err.style.display = "block";
-      }
-    }
-    const f = document.getElementById("f");
-    const ok = document.getElementById("ok");
-    const err = document.getElementById("err");
-  </script>
 </body>
 </html>
